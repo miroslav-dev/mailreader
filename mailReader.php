@@ -43,17 +43,18 @@ class mailReader {
     var $mf_faxquality;
     var $blob_file;
 
+    public $pdo = NULL;
+
 
     /**
      * @param $save_directory (required) A path to a directory where files will be saved
      * @param $allowed_senders (required) An array of email addresses allowed to send through this script
      * @param $pdo (optional) A PDO connection to a database for saving emails 
      */
-    public function __construct($save_directory,$allowed_senders,$pdo = NULL){
+    public function __construct($save_directory,$allowed_senders){
         if(!preg_match('|/$|',$save_directory)){ $save_directory .= '/'; } // add trailing slash if needed
             $this->save_directory = $save_directory;
         $this->allowed_senders = $allowed_senders;
-        $this->pdo = $pdo;
     }
 
     /**

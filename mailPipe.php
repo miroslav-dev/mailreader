@@ -46,8 +46,9 @@ $db_name = 'sample';
 $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8",$db_un,$db_pass);
 
 $mr = new mailReader($save_directory,$pdo);
-$mr->save_msg_to_db = TRUE;
-$mr->send_email = TRUE;
+$mr->pdo = $pdo;
+//$mr->save_msg_to_db = TRUE;
+//$mr->send_email = TRUE;
 // Example of how to add additional allowed mime types to the list
 // $mr->allowed_mime_types[] = 'text/csv';
 $mr->readEmail();
