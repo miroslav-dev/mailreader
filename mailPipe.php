@@ -39,10 +39,10 @@ $save_directory = __DIR__; // stick them in the current directory
 
 // Configure your MySQL database connection here
 // Other PDO connections will probably work too
-$db_host = '74.207.240.208';
-$db_un = 'sendfaxtest';
-$db_pass = 'yrezazu9u';
-$db_name = 'zadmin_asterisk';
+$db_host = 'sample';
+$db_un = 'sample';
+$db_pass = 'sample';
+$db_name = 'sample';
 $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8",$db_un,$db_pass);
 
 $mr = new mailReader($save_directory,$pdo);
