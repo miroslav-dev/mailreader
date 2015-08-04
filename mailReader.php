@@ -22,13 +22,13 @@ class mailReader {
     var $save_directory; // A safe place for files. Malicious users could upload a php or executable file, so keep this out of your web root
     var $allowed_senders = Array(); // Allowed senders is just the email part of the sender (no name part)
     var $allowed_mime_types = Array(
-        'audio/wave',
+        //'audio/wave',
         'application/pdf',
-        'application/zip',
-        'application/octet-stream',
-        'image/jpeg',
-        'image/png',
-        'image/gif',
+        //'application/zip',
+        //'application/octet-stream',
+        //'image/jpeg',
+        //'image/png',
+        //'image/gif',
     );
     var $debug = FALSE;
 
@@ -37,6 +37,11 @@ class mailReader {
     var $from;
     var $subject;
     var $body;
+
+    var $mf_te_id;
+    var $mf_cidnum;
+    var $mf_faxquality;
+    var $blob_file;
 
 
     /**
@@ -77,9 +82,9 @@ class mailReader {
         // Set $this->from_email and check if it's allowed
         $this->from = $this->decoded->headers['from'];
         $this->from_email = preg_replace('/.*<(.*)>.*/',"$1",$this->from);
-        if(!in_array($this->from_email,$this->allowed_senders)){
-            die("$this->from_email not an allowed sender");
-        }
+
+        // check if it's allowed sender and get data
+        $this->getSenderData();
 
         // Set the $this->subject
         $this->subject = $this->decoded->headers['subject'];
@@ -144,6 +149,21 @@ class mailReader {
         return $this->saved_files;
     }
 
+    private function getSenderData() {
+        // read data from zadmin_asterisk.mf_mailtofaxes
+        $sender_data = $this->pdo->prepare("SELECT mf_te_id, mf_cidnum, mf_faxquality FROM `mf_mailtofaxes` WHERE `mf_email` LIKE '?'");
+        if($sender_data->execute(array(mb_convert_encoding($this->from_email,'UTF-8','UTF-8')))) {
+            $row = $sender_data->fetch();
+
+            $this->mf_te_id = $row->mf_te_id;
+            $this->mf_cidnum = $row->mf_cidnum;
+            $this->mf_faxquality = $row->mf_faxquality;
+        }
+        else {
+            die("$this->from_email not an allowed sender");
+        }
+    }
+
     /**
      * @brief Decode a single body part of an email message
      *
@@ -191,7 +211,26 @@ class mailReader {
      * @param $mimeType (required) The mime-type of the file
      */
     private function saveFile($filename,$contents,$mimeType = 'unknown'){
-        $filename = preg_replace('/[^a-zA-Z0-9_-]/','_',$filename);
+
+        if(!in_array($mimeType, $this->allowed_mime_types))
+            return;
+
+        $sql = "INSERT INTO fa_faxes (`fa_te_id`,`fa_source_num`,`fa_dest_num`,`fa_direction`,`fa_file`,`fa_status`,`fa_statusemail`) VALUES (':mf_te_id',':mf_cidnum',':subject','OUT',':file','READY',':from_email')";
+        $insert = $this->pdo->prepare($sql);
+        $insert->bindParam(':mf_te_id',$this->mf_te_id);
+        $insert->bindParam(':mf_cidnum',$this->mf_cidnum);
+        $insert->bindParam(':subject',$this->subject);
+        $insert->bindParam(':file',$this->blob_file);
+        $insert->bindParam(':from_email',$this->from_email);
+
+        if(!$insert->execute()){
+            if($this->debug){
+                print_r($insertFile->errorInfo());
+            }
+            die("Insert file info failed!");
+        }
+
+        /*$filename = preg_replace('/[^a-zA-Z0-9_-]/','_',$filename);
 
         $unlocked_and_unique = FALSE;
         while(!$unlocked_and_unique){
@@ -218,7 +257,7 @@ class mailReader {
         $this->saved_files[$name] = Array(
             'size' => $this->formatBytes(filesize($this->save_directory.$name)),
             'mime' => $mimeType
-        );
+        );*/
     }
 
     /**
