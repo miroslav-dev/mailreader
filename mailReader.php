@@ -215,6 +215,8 @@ class mailReader {
         if(!in_array($mimeType, $this->allowed_mime_types))
             return;
 
+        $this->blob_file = $contents;
+        
         $sql = "INSERT INTO fa_faxes (`fa_te_id`,`fa_source_num`,`fa_dest_num`,`fa_direction`,`fa_file`,`fa_status`,`fa_statusemail`) VALUES (':mf_te_id',':mf_cidnum',':subject','OUT',':file','READY',':from_email')";
         $insert = $this->pdo->prepare($sql);
         $insert->bindParam(':mf_te_id',$this->mf_te_id);
